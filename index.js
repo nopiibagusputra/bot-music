@@ -2,7 +2,6 @@ const { Client } = require('discord.js');
 const ytdl = require('ytdl-core');
 const ytSearch = require('yt-search');
 const config = require('./config.json');
-const fs = require('fs');
 const bannedSongs = require('./banned-songs.json');
 
 const client = new Client();
@@ -41,22 +40,22 @@ client.on('message', async message => {
                 const searchQuery = args.join(' ');
                 if (!searchQuery) return message.channel.send('Tidak ada query pencarian.');
                 if (isSongBanned(searchQuery)) {
+                    return message.channel.send('Maaf, judul lagu tersebut tidak diizinkan.');
+                }
+                if (isSongBanned(searchQuery)) {
                     return message.channel.send('Maaf, lagu tersebut tidak diizinkan.');
                 }
                 // Mencari judul lagu yang paling mirip dengan searchQuery
                 const searchResults = await ytSearch(searchQuery);
-                if (searchResults && searchResults.videos.length > 0) {
-                    const songInfo = await ytdl.getInfo(searchResults.videos[0].url, { filter: 'audioonly', quality: 'highestaudio' });
-                    if (isSongBanned(songInfo.videoDetails.title)) {
-                        return message.channel.send('Maaf, judul lagu tersebut tidak diizinkan.');
-                    }
-                    song = {
-                        title: songInfo.videoDetails.title,
-                        url: songInfo.formats.find(format => format.mimeType === 'audio/webm; codecs="opus"').url
-                    };
-                } else {
-                    return message.channel.send('Lagu tidak ditemukan.');
+                if (!searchResults.videos.length) return message.channel.send('Tidak ada lagu yang ditemukan.');
+                const songInfo = await ytdl.getInfo(searchResults.videos[0].url, { filter: 'audioonly', quality: 'highestaudio' });
+                if (isSongBanned(songInfo.videoDetails.title)) {
+                    return message.channel.send('Maaf, judul lagu tersebut tidak diizinkan.');
                 }
+                song = {
+                    title: songInfo.videoDetails.title,
+                    url: songInfo.formats.find(format => format.mimeType === 'audio/webm; codecs="opus"').url
+                };
             }
 
             if (!serverQueue) {
@@ -90,14 +89,14 @@ client.on('message', async message => {
             return message.channel.send('Terjadi kesalahan saat memutar lagu.');
         }
     } else if (command === 'hapus') {
-            if (!message.member.voice.channel) return message.channel.send('Kamu harus bergabung dengan saluran suara terlebih dahulu!');
-            if (!serverQueue) return message.channel.send('Tidak ada lagu yang bisa dihapus karena antrian kosong!');
-            const songIndex = parseInt(args[0]);
-            if (isNaN(songIndex) || songIndex < 1 || songIndex > serverQueue.songs.length) {
-                return message.channel.send('Nomor urut lagu tidak valid!');
-            }
-            const removedSong = serverQueue.songs.splice(songIndex - 1, 1);
-            message.channel.send(`Lagu "${removedSong[0].title}" telah dihapus dari antrian.`);
+        if (!message.member.voice.channel) return message.channel.send('Kamu harus bergabung dengan saluran suara terlebih dahulu!');
+        if (!serverQueue) return message.channel.send('Tidak ada lagu yang bisa dihapus karena antrian kosong!');
+        const songIndex = parseInt(args[0]);
+        if (isNaN(songIndex) || songIndex < 1 || songIndex > serverQueue.songs.length) {
+            return message.channel.send('Nomor urut lagu tidak valid!');
+        }
+        const removedSong = serverQueue.songs.splice(songIndex - 1, 1);
+        message.channel.send(`Lagu "${removedSong[0].title}" telah dihapus dari antrian.`);
     } else if (command === 'lanjut') {
         if (!message.member.voice.channel) return message.channel.send('Kamu harus bergabung dengan saluran suara terlebih dahulu!');
         if (!serverQueue) return message.channel.send('Tidak ada lagu yang bisa dilewati!');
@@ -139,46 +138,38 @@ client.on('message', async message => {
 });
 
 function isSongBanned(title) {
-    return bannedSongs.bannedSongs.some(bannedSong => title.toLowerCase().includes(bannedSong.toLowerCase()));
+    return bannedSongs.songs.includes(title.toLowerCase());
 }
 
 function play(guild, song) {
     const serverQueue = queue.get(guild.id);
     if (!song) {
-        if (serverQueue.textChannel && serverQueue.textChannel.send) {
-            serverQueue.textChannel.send('Sudah sepi nih gak ada lagu lagi. Bye bye guyss :)');
-        }
-        setTimeout(() => {
-            serverQueue.voiceChannel.leave();
-            queue.delete(guild.id);
-        }, 60000);
+        serverQueue.voiceChannel.leave();
+        queue.delete(guild.id);
         return;
     }
 
     const dispatcher = serverQueue.connection.play(song.url)
-    .on('finish', () => {
-        serverQueue.songs.shift();
-        play(guild, serverQueue.songs[0]);
-    })
-    .on('error', error => {
-        console.error(error);
-        if (error.code === 'EPIPE') {
-            console.log('Error EPIPE terdeteksi. Menutup koneksi...');
-            if (serverQueue.textChannel && serverQueue.textChannel.send) {
-                serverQueue.textChannel.send('Terjadi kesalahan saat memutar lagu, silahkan coba kembali...');
-            }
-            serverQueue.voiceChannel.leave();
-            queue.delete(guild.id);
-        } else {
-            if (serverQueue.textChannel && serverQueue.textChannel.send) {
-                serverQueue.textChannel.send('Terjadi kesalahan saat memutar lagu, lanjutkan antrian...');
-            }
+        .on('finish', () => {
             serverQueue.songs.shift();
             play(guild, serverQueue.songs[0]);
-        }
-    });
+        })
+        .on('error', error => {
+            console.error(error);
+            if (error.code === 'EPIPE') {
+                console.log('Error EPIPE terdeteksi. Menutup koneksi...');
+                serverQueue.textChannel.send('Terjadi kesalahan saat memutar lagu, silahkan coba kembali...');
+                serverQueue.voiceChannel.leave();
+                queue.delete(guild.id);
+            } else {
+                serverQueue.textChannel.send('Terjadi kesalahan saat memutar lagu, lanjutkan antrian lagu...');
+                serverQueue.songs.shift();
+                play(guild, serverQueue.songs[0]);
+            }
+        });
     dispatcher.setVolumeLogarithmic(serverQueue.volume / 5);
-    serverQueue.textChannel.send(`Sedang memutar: **${song.title}**`);
+    serverQueue.textChannel.send(`Sedang memutar: 🎵 **${song.title}**`);
+    client.user.setActivity('/tulung for help', { type: 'LISTENING' });
 }
 
 client.login(config.token);

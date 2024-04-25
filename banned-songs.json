@@ -1,8 +1,4 @@
 {
-    "bannedSongs": [
-      "Sound effect orang teriak",
-      "teriak",
-      "Mendesah"
-    ]
-  }
-  
+  "songs": [],
+  "titles": ["orang teriak", "mendesah"]
+}
