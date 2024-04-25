@@ -2,6 +2,8 @@ const { Client } = require('discord.js');
 const ytdl = require('ytdl-core');
 const ytSearch = require('yt-search');
 const config = require('./config.json');
+const fs = require('fs');
+const bannedSongs = require('./banned-songs.json');
 
 const client = new Client();
 const queue = new Map();
@@ -28,16 +30,26 @@ client.on('message', async message => {
             // Cek apakah args[0] merupakan URL atau judul
             if (ytdl.validateURL(args[0])) {
                 const songInfo = await ytdl.getInfo(args[0], { filter: 'audioonly', quality: 'highestaudio' });
+                if (isSongBanned(songInfo.videoDetails.title)) {
+                    return message.channel.send('Maaf, judul lagu tersebut tidak diizinkan.');
+                }
                 song = {
                     title: songInfo.videoDetails.title,
                     url: songInfo.formats.find(format => format.mimeType === 'audio/webm; codecs="opus"').url
                 };
             } else {
                 const searchQuery = args.join(' ');
+                if (!searchQuery) return message.channel.send('Tidak ada query pencarian.');
+                if (isSongBanned(searchQuery)) {
+                    return message.channel.send('Maaf, lagu tersebut tidak diizinkan.');
+                }
                 // Mencari judul lagu yang paling mirip dengan searchQuery
                 const searchResults = await ytSearch(searchQuery);
                 if (searchResults && searchResults.videos.length > 0) {
                     const songInfo = await ytdl.getInfo(searchResults.videos[0].url, { filter: 'audioonly', quality: 'highestaudio' });
+                    if (isSongBanned(songInfo.videoDetails.title)) {
+                        return message.channel.send('Maaf, judul lagu tersebut tidak diizinkan.');
+                    }
                     song = {
                         title: songInfo.videoDetails.title,
                         url: songInfo.formats.find(format => format.mimeType === 'audio/webm; codecs="opus"').url
@@ -124,6 +136,10 @@ client.on('message', async message => {
         return message.channel.send(helpMessage);
     }
 });
+
+function isSongBanned(title) {
+    return bannedSongs.bannedSongs.some(bannedSong => title.toLowerCase().includes(bannedSong.toLowerCase()));
+}
 
 function play(guild, song) {
     const serverQueue = queue.get(guild.id);
