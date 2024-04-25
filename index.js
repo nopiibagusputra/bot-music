@@ -101,7 +101,7 @@ client.on('message', async message => {
         serverQueue.songs = [];
         serverQueue.connection.dispatcher.end();
         serverQueue.voiceChannel.leave();
-        serverQueue.textChannel.send('Bye bye guyss :)');
+        serverQueue.textChannel.send('Bye bye guyss :), jangan kangen kutinggal yahh');
         queue.delete(message.guild.id);
     } else if (command === 'dhaptar') {
         if (!serverQueue || serverQueue.songs.length === 0) return message.channel.send('Tidak ada lagu di dalam antrian.');
@@ -110,7 +110,7 @@ client.on('message', async message => {
             queueMessage += `${i + 1}. ${serverQueue.songs[i].title}\n`;
         }
         return message.channel.send('Hello ini Antrian musik yang ada:\n' + queueMessage);
-    } else if (command === 'help' || command === 'bantuan') {
+    } else if (command === 'help' || command === 'tulung') {
         const helpMessage = `
         **Daftar Perintah:**
         /maen <URL>: Memutar lagu dari YouTube
@@ -118,8 +118,8 @@ client.on('message', async message => {
         /mandek: Menghentikan pemutaran lagu
         /ngaleh: Mematikan bot dan keluar dari saluran suara
         /dhaptar: Menampilkan daftar lagu yang sedang dalam antrian
-        /hapus <index lagu>: Menghapus lagu dari antrian
-        /help atau /bantuan: Menampilkan pesan bantuan ini
+        /hapus <INDEX LAGU>: Menghapus lagu dari antrian
+        /help atau /tulung: Menampilkan pesan bantuan ini
         `;
         return message.channel.send(helpMessage);
     }
@@ -128,6 +128,9 @@ client.on('message', async message => {
 function play(guild, song) {
     const serverQueue = queue.get(guild.id);
     if (!song) {
+        if (serverQueue.textChannel && serverQueue.textChannel.send) {
+            serverQueue.textChannel.send('Sudah sepi gak ada lagu nih. Bye bye guyss :)');
+        }
         serverQueue.voiceChannel.leave();
         queue.delete(guild.id);
         return;
@@ -142,17 +145,21 @@ function play(guild, song) {
         console.error(error);
         if (error.code === 'EPIPE') {
             console.log('Error EPIPE terdeteksi. Menutup koneksi...');
-            serverQueue.textChannel.send('Terjadi kesalahan saat memutar lagu, silahkan coba kembali...');
+            if (serverQueue.textChannel && serverQueue.textChannel.send) {
+                serverQueue.textChannel.send('Terjadi kesalahan saat memutar lagu, silahkan coba kembali...');
+            }
             serverQueue.voiceChannel.leave();
             queue.delete(guild.id);
         } else {
-            serverQueue.textChannel.send('Terjadi kesalahan saat memutar lagu, lanjutkan antrian...');
+            if (serverQueue.textChannel && serverQueue.textChannel.send) {
+                serverQueue.textChannel.send('Terjadi kesalahan saat memutar lagu, lanjutkan antrian...');
+            }
             serverQueue.songs.shift();
             play(guild, serverQueue.songs[0]);
         }
     });
-dispatcher.setVolumeLogarithmic(serverQueue.volume / 5);
-serverQueue.textChannel.send(`Sedang memutar: **${song.title}**`);
+    dispatcher.setVolumeLogarithmic(serverQueue.volume / 5);
+    serverQueue.textChannel.send(`Sedang memutar: **${song.title}**`);
 }
 
 client.login(config.token);
