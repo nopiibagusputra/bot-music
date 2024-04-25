@@ -126,6 +126,7 @@ client.on('message', async message => {
         const helpMessage = `
         **Daftar Perintah:**
         /maen <URL>: Memutar lagu dari YouTube
+        /maen <JUDUL>: Memutar lagu dari YouTube
         /lanjut: Melewati lagu yang sedang diputar
         /mandek: Menghentikan pemutaran lagu
         /ngaleh: Mematikan bot dan keluar dari saluran suara
@@ -145,10 +146,12 @@ function play(guild, song) {
     const serverQueue = queue.get(guild.id);
     if (!song) {
         if (serverQueue.textChannel && serverQueue.textChannel.send) {
-            serverQueue.textChannel.send('Sudah sepi gak ada lagu nih. Bye bye guyss :)');
+            serverQueue.textChannel.send('Sudah sepi nih gak ada lagu lagi. Bye bye guyss :)');
         }
-        serverQueue.voiceChannel.leave();
-        queue.delete(guild.id);
+        setTimeout(() => {
+            serverQueue.voiceChannel.leave();
+            queue.delete(guild.id);
+        }, 60000);
         return;
     }
 
