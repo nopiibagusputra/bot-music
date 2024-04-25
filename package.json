@@ -1,0 +1,23 @@
+{
+  "name": "bot-music",
+  "version": "1.0.0",
+  "description": "Bot Music Discord",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "bot"
+  ],
+  "author": "Ambyar Group",
+  "license": "ISC",
+  "dependencies": {
+    "discord-player": "^6.6.8",
+    "discord.js": "^12.5.3",
+    "discord.js-player": "^1.1.2",
+    "ffmpeg": "^0.0.4",
+    "fluent-ffmpeg": "^2.1.2",
+    "yt-search": "^2.10.4",
+    "ytdl-core": "^4.11.5"
+  }
+}
