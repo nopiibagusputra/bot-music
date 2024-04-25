@@ -4,7 +4,7 @@ Bot Discord Music dengan sumber pemutaran musik dari youtube, dengan menggunakan
 
 ## Fitur
 
-Perintah yang tersedia :
+| Perintah yang tersedia :
 
 - /maen <'URL'> : Memutar lagu dari URL YouTube
 - /maen <'JUDUL LAGU'> : Memutar lagu dari Judul Lagu YouTube
@@ -14,6 +14,10 @@ Perintah yang tersedia :
 - /dhaptar : Menampilkan daftar lagu yang sedang dalam antrian
 - /hapus <'INDEX LAGU'> : Menghapus lagu dari antrian
 - /help atau /bantuan : Menampilkan pesan bantuan
+
+| Banned Song
+
+- Fitur Banned lagu yang dapat ditambahkan pada file banned-songs.json, lagu yang ditambahkan kefile tersebut tidak akan dapat diputar.
 
 ## Instalasi
 
