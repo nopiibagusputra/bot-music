@@ -24,40 +24,8 @@ client.on('message', async message => {
         const voiceChannel = message.member.voice.channel;
         if (!voiceChannel) return message.channel.send('Kamu harus bergabung dengan saluran suara terlebih dahulu!');
 
-        let song;
+        let songsToAdd = args.join(' ').split(';').map(song => song.trim());
         try {
-            // Cek apakah args[0] merupakan URL atau judul
-            if (ytdl.validateURL(args[0])) {
-                const songInfo = await ytdl.getInfo(args[0], { filter: 'audioonly', quality: 'highestaudio' });
-                if (isSongBanned(songInfo.videoDetails.title)) {
-                    return message.channel.send('Maaf, judul lagu tersebut tidak diizinkan.');
-                }
-                song = {
-                    title: songInfo.videoDetails.title,
-                    url: songInfo.formats.find(format => format.mimeType === 'audio/webm; codecs="opus"').url
-                };
-            } else {
-                const searchQuery = args.join(' ');
-                if (!searchQuery) return message.channel.send('Tidak ada query pencarian.');
-                if (isSongBanned(searchQuery)) {
-                    return message.channel.send('Maaf, judul lagu tersebut tidak diizinkan.');
-                }
-                if (isSongBanned(searchQuery)) {
-                    return message.channel.send('Maaf, lagu tersebut tidak diizinkan.');
-                }
-                // Mencari judul lagu yang paling mirip dengan searchQuery
-                const searchResults = await ytSearch(searchQuery);
-                if (!searchResults.videos.length) return message.channel.send('Tidak ada lagu yang ditemukan.');
-                const songInfo = await ytdl.getInfo(searchResults.videos[0].url, { filter: 'audioonly', quality: 'highestaudio' });
-                if (isSongBanned(songInfo.videoDetails.title)) {
-                    return message.channel.send('Maaf, judul lagu tersebut tidak diizinkan.');
-                }
-                song = {
-                    title: songInfo.videoDetails.title,
-                    url: songInfo.formats.find(format => format.mimeType === 'audio/webm; codecs="opus"').url
-                };
-            }
-
             if (!serverQueue) {
                 const queueContruct = {
                     textChannel: message.channel,
@@ -69,7 +37,37 @@ client.on('message', async message => {
                 };
 
                 queue.set(message.guild.id, queueContruct);
-                queueContruct.songs.push(song);
+
+                for (const songArg of songsToAdd) {
+                    let song;
+                    if (ytdl.validateURL(songArg)) {
+                        const songInfo = await ytdl.getInfo(songArg, { filter: 'audioonly', quality: 'highestaudio' });
+                        if (isSongBanned(songInfo.videoDetails.title)) {
+                            return message.channel.send('Maaf, judul lagu tersebut tidak diizinkan.');
+                        }
+                        song = {
+                            title: songInfo.videoDetails.title,
+                            url: songInfo.formats.find(format => format.mimeType === 'audio/webm; codecs="opus"').url
+                        };
+                    } else {
+                        const searchQuery = songArg;
+                        if (!searchQuery) continue;
+                        if (isSongBanned(searchQuery)) {
+                            return message.channel.send('Maaf, judul lagu tersebut tidak diizinkan.');
+                        }
+                        const searchResults = await ytSearch(searchQuery);
+                        if (!searchResults.videos.length) continue;
+                        const songInfo = await ytdl.getInfo(searchResults.videos[0].url, { filter: 'audioonly', quality: 'highestaudio' });
+                        if (isSongBanned(songInfo.videoDetails.title)) {
+                            return message.channel.send('Maaf, judul lagu tersebut tidak diizinkan.');
+                        }
+                        song = {
+                            title: songInfo.videoDetails.title,
+                            url: songInfo.formats.find(format => format.mimeType === 'audio/webm; codecs="opus"').url
+                        };
+                    }
+                    queueContruct.songs.push(song);
+                }
 
                 try {
                     const connection = await voiceChannel.join();
@@ -81,8 +79,37 @@ client.on('message', async message => {
                     return message.channel.send(err.message);
                 }
             } else {
-                serverQueue.songs.push(song);
-                return message.channel.send(`${song.title} telah ditambahkan ke dalam antrian!`);
+                for (const songArg of songsToAdd) {
+                    let song;
+                    if (ytdl.validateURL(songArg)) {
+                        const songInfo = await ytdl.getInfo(songArg, { filter: 'audioonly', quality: 'highestaudio' });
+                        if (isSongBanned(songInfo.videoDetails.title)) {
+                            return message.channel.send('Maaf, judul lagu tersebut tidak diizinkan.');
+                        }
+                        song = {
+                            title: songInfo.videoDetails.title,
+                            url: songInfo.formats.find(format => format.mimeType === 'audio/webm; codecs="opus"').url
+                        };
+                    } else {
+                        const searchQuery = songArg;
+                        if (!searchQuery) continue;
+                        if (isSongBanned(searchQuery)) {
+                            return message.channel.send('Maaf, judul lagu tersebut tidak diizinkan.');
+                        }
+                        const searchResults = await ytSearch(searchQuery);
+                        if (!searchResults.videos.length) continue;
+                        const songInfo = await ytdl.getInfo(searchResults.videos[0].url, { filter: 'audioonly', quality: 'highestaudio' });
+                        if (isSongBanned(songInfo.videoDetails.title)) {
+                            return message.channel.send('Maaf, judul lagu tersebut tidak diizinkan.');
+                        }
+                        song = {
+                            title: songInfo.videoDetails.title,
+                            url: songInfo.formats.find(format => format.mimeType === 'audio/webm; codecs="opus"').url
+                        };
+                    }
+                    serverQueue.songs.push(song);
+                }
+                return message.channel.send('Lagu telah ditambahkan ke dalam antrian!');
             }
         } catch (error) {
             console.error(error);
@@ -123,7 +150,7 @@ client.on('message', async message => {
         for (let i = 0; i < serverQueue.songs.length; i++) {
             queueMessage += `🎵 ${i + 1}. ${serverQueue.songs[i].title}\n`;
         }
-        queueMessage += '```'; // Tutup code block
+        queueMessage += '```';
         return message.channel.send(queueMessage);
     } else if (command === 'help' || command === 'tulung') {
         const helpMessage = `
@@ -167,19 +194,6 @@ function play(guild, song) {
                     serverQueue.voiceChannel.leave();
                     queue.delete(guild.id);
                 }, 30000);
-            }
-        })
-        .on('close', () => {
-            if (serverQueue && serverQueue.songs.length === 0) {
-                setTimeout(() => {
-                    serverQueue.voiceChannel.leave();
-                    queue.delete(guild.id);
-                }, 30000);
-            } else {
-                if (serverQueue) {
-                    serverQueue.songs.shift();
-                    play(guild, serverQueue.songs[0]);
-                }
             }
         })
         .on('error', error => {
