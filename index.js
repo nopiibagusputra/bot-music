@@ -138,14 +138,17 @@ client.on('message', async message => {
 });
 
 function isSongBanned(title) {
-    return bannedSongs.songs.includes(title.toLowerCase());
+    return bannedSongs.bannedSongs.some(bannedSong => title.toLowerCase().includes(bannedSong.toLowerCase()));
 }
 
 function play(guild, song) {
     const serverQueue = queue.get(guild.id);
     if (!song) {
-        serverQueue.voiceChannel.leave();
-        queue.delete(guild.id);
+        serverQueue.textChannel.send('daftar putar sudah habis, menunggu 30 detik sebelum aku pergi...');
+        setTimeout(() => {
+            serverQueue.voiceChannel.leave();
+            queue.delete(guild.id);
+        }, 30000);
         return;
     }
 
@@ -168,7 +171,7 @@ function play(guild, song) {
             }
         });
     dispatcher.setVolumeLogarithmic(serverQueue.volume / 5);
-    serverQueue.textChannel.send(`Sedang memutar: 🎵 **${song.title}**`);
+    serverQueue.textChannel.send(`Sedang memutar: 🎵  **${song.title}**`);
     client.user.setActivity('/tulung for help', { type: 'LISTENING' });
 }
 
