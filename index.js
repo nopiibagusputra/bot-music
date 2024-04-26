@@ -106,7 +106,7 @@ client.on('message', async message => {
         if (!serverQueue) return message.channel.send('Tidak ada lagu yang bisa dihentikan!');
         serverQueue.songs = [];
         serverQueue.connection.dispatcher.end();
-    } else if (command === 'ngaleh') {
+    } else if (command === 'metu') {
         if (!message.member.voice.channel) return message.channel.send('Kamu harus bergabung dengan saluran suara terlebih dahulu!');
         if (!serverQueue) return message.channel.send('Bot tidak terhubung ke saluran suara manapun.');
         serverQueue.songs = [];
@@ -128,7 +128,7 @@ client.on('message', async message => {
         /maen <JUDUL>: Memutar lagu dari YouTube
         /lanjut: Melewati lagu yang sedang diputar
         /mandek: Menghentikan pemutaran lagu
-        /ngaleh: Mematikan bot dan keluar dari saluran suara
+        /metu: Mematikan bot dan keluar dari saluran suara
         /dhaptar: Menampilkan daftar lagu yang sedang dalam antrian
         /hapus <INDEX LAGU>: Menghapus lagu dari antrian
         /help atau /tulung: Menampilkan pesan bantuan ini
@@ -155,7 +155,29 @@ function play(guild, song) {
     const dispatcher = serverQueue.connection.play(song.url)
         .on('finish', () => {
             serverQueue.songs.shift();
-            play(guild, serverQueue.songs[0]);
+            if (serverQueue.songs.length > 0) {
+                play(guild, serverQueue.songs[0]);
+            } else {
+                serverQueue.textChannel.send('Daftar putar sudah habis, menunggu 30 detik sebelum aku pergi...');
+                setTimeout(() => {
+                    serverQueue.voiceChannel.leave();
+                    queue.delete(guild.id);
+                }, 30000);
+            }
+        })
+        .on('close', () => {
+            if (serverQueue && serverQueue.songs.length === 0) {
+                serverQueue.textChannel.send('Daftar putar sudah habis, menunggu 30 detik sebelum aku pergi...');
+                setTimeout(() => {
+                    serverQueue.voiceChannel.leave();
+                    queue.delete(guild.id);
+                }, 30000);
+            } else {
+                if (serverQueue) {
+                    serverQueue.songs.shift();
+                    play(guild, serverQueue.songs[0]);
+                }
+            }
         })
         .on('error', error => {
             console.error(error);
