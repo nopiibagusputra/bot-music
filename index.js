@@ -116,11 +116,15 @@ client.on('message', async message => {
         queue.delete(message.guild.id);
     } else if (command === 'dhaptar') {
         if (!serverQueue || serverQueue.songs.length === 0) return message.channel.send('Tidak ada lagu di dalam antrian.');
-        let queueMessage = '';
+    
+        let queueMessage = '```fix\n';
+        queueMessage += '🎶 Daftar Antrian Musik 🎶:\n\n';
+    
         for (let i = 0; i < serverQueue.songs.length; i++) {
-            queueMessage += `${i + 1}. ${serverQueue.songs[i].title}\n`;
+            queueMessage += `🎵 ${i + 1}. ${serverQueue.songs[i].title}\n`;
         }
-        return message.channel.send('Hello ini Antrian musik yang ada:\n' + queueMessage);
+        queueMessage += '```'; // Tutup code block
+        return message.channel.send(queueMessage);
     } else if (command === 'help' || command === 'tulung') {
         const helpMessage = `
         **Daftar Perintah:**
@@ -167,7 +171,6 @@ function play(guild, song) {
         })
         .on('close', () => {
             if (serverQueue && serverQueue.songs.length === 0) {
-                serverQueue.textChannel.send('Daftar putar sudah habis, menunggu 30 detik sebelum aku pergi...');
                 setTimeout(() => {
                     serverQueue.voiceChannel.leave();
                     queue.delete(guild.id);
