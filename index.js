@@ -32,7 +32,7 @@ client.on('message', async message => {
                     voiceChannel: voiceChannel,
                     connection: null,
                     songs: [],
-                    volume: 2,
+                    volume: 5,
                     playing: true
                 };
 
@@ -41,7 +41,7 @@ client.on('message', async message => {
                 for (const songArg of songsToAdd) {
                     let song;
                     if (ytdl.validateURL(songArg)) {
-                        const songInfo = await ytdl.getInfo(songArg, { filter: 'audioonly', quality: 'highestaudio' });
+                        const songInfo = await ytdl.getInfo(songArg, { filter: 'audioonly', quality: 'highestaudio', highWaterMark: 50000000, liveBuffer: 250000000 });
                         if (isSongBanned(songInfo.videoDetails.title)) {
                             return message.channel.send('Maaf, judul lagu tersebut tidak diizinkan.');
                         }
@@ -57,7 +57,7 @@ client.on('message', async message => {
                         }
                         const searchResults = await ytSearch(searchQuery);
                         if (!searchResults.videos.length) continue;
-                        const songInfo = await ytdl.getInfo(searchResults.videos[0].url, { filter: 'audioonly', quality: 'highestaudio' });
+                        const songInfo = await ytdl.getInfo(searchResults.videos[0].url, { filter: 'audioonly', quality: 'highestaudio',  highWaterMark: 50000000, liveBuffer: 250000000 });
                         if (isSongBanned(songInfo.videoDetails.title)) {
                             return message.channel.send('Maaf, judul lagu tersebut tidak diizinkan.');
                         }
@@ -82,7 +82,7 @@ client.on('message', async message => {
                 for (const songArg of songsToAdd) {
                     let song;
                     if (ytdl.validateURL(songArg)) {
-                        const songInfo = await ytdl.getInfo(songArg, { filter: 'audioonly', quality: 'highestaudio' });
+                        const songInfo = await ytdl.getInfo(songArg, { filter: 'audioonly', quality: 'highestaudio',  highWaterMark: 50000000, liveBuffer: 250000000 });
                         if (isSongBanned(songInfo.videoDetails.title)) {
                             return message.channel.send('Maaf, judul lagu tersebut tidak diizinkan.');
                         }
@@ -98,7 +98,7 @@ client.on('message', async message => {
                         }
                         const searchResults = await ytSearch(searchQuery);
                         if (!searchResults.videos.length) continue;
-                        const songInfo = await ytdl.getInfo(searchResults.videos[0].url, { filter: 'audioonly', quality: 'highestaudio' });
+                        const songInfo = await ytdl.getInfo(searchResults.videos[0].url, { filter: 'audioonly', quality: 'highestaudio',  highWaterMark: 50000000, liveBuffer: 250000000 });
                         if (isSongBanned(songInfo.videoDetails.title)) {
                             return message.channel.send('Maaf, judul lagu tersebut tidak diizinkan.');
                         }
